@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import struct
-import bitstruct
+from bitarray import bitarray
 
 def parse_wind_profiler_bufr(file):
     '''
@@ -22,11 +22,29 @@ def parse_wind_profiler_bufr(file):
 def parse_header(fileptr):
     return fileptr.read(18)
 
+
 def parse_section4(fileptr, data):
     fileptr.seek(4, 1)
     packed_data = fileptr.read() 
 
-    print packed_data
+    bits = bitarray()
+    bits.frombytes(packed_data)
+
+    pos = 0
+    parse_station(bits, pos)
+
+
+def parse_station(bits, pos):
+    print readint(bits, pos, 7)
+
+
+def readint(bits, pos, length):
+    return toint(bits[pos : pos + length])
+
+def toint(bits):
+    return reduce(lambda x, y: x << 1 | y, bits.tolist())
+
+
 
 if __name__ == '__main__':
     import sys

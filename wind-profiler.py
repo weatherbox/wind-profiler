@@ -52,9 +52,9 @@ def parse_station(bits):
     station = {}
     station['wmo_block']      = bits.readint(7)
     station['wmo_station_id'] = bits.readint(10)
-    station['lat']            = bits.readint(16)
-    station['lon']            = bits.readint(15)
-    station['height']         = bits.readint(15)
+    station['lat']            = bufr_0_05_002(bits.readint(15))
+    station['lon']            = bufr_0_06_002(bits.readint(16))
+    station['height']         = bufr_0_07_001(bits.readint(15))
     station['device']         = bits.readint(4)
     station['X']              = bits.readint(8)
 
@@ -85,13 +85,46 @@ def parse_observation(bits):
 def parse_layer(bits):
     layer = {}
     layer['h']       = bits.readint(15)
-    layer['quality'] = bits.readint(8)
-    layer['u']       = bits.readint(13)
-    layer['v']       = bits.readint(13)
-    layer['w']       = bits.readint(13)
-    layer['s/n']     = bits.readint(8)
+    layer['quality'] = bufr_0_25_192(bits.readint(8))
+    layer['u']       = bufr_0_11_002(bits.readint(13))
+    layer['v']       = bufr_0_11_002(bits.readint(13))
+    layer['w']       = bufr_0_11_006(bits.readint(13))
+    layer['s/n']     = bufr_0_21_030(bits.readint(8))
 
     return layer
+
+
+'''
+BUFR Table B
+http://www.wmo.int/pages/prog/www/WMOCodes/WMO306_vI2/LatestVERSION/LatestVERSION.html
+'''
+
+def bufr_0_05_002(x):
+    return (x - 9000) * 0.01
+
+def bufr_0_06_002(x):
+    return (x - 18000) * 0.01
+
+def bufr_0_07_001(x):
+    return x - 400
+
+# 0_11_003 is same
+def bufr_0_11_002(x):
+    return (x - 4096) * 0.1
+
+def bufr_0_11_006(x):
+    return (x - 4096) * 0.01
+
+def bufr_0_21_030(x):
+    return x - 32
+
+def bufr_0_25_192(x):
+    if x == 128:
+        return 'ok'
+    elif x == 256:
+        return 'missing'
+    else:
+        return 'not good'
 
 
 class Bits():
@@ -109,15 +142,6 @@ class Bits():
     def toint(bits):
         #print bits
         return reduce(lambda x, y: x << 1 | y, bits.tolist())
-
-    @staticmethod
-    def tointn(bits):
-        #print bits
-        bitlist = bits.tolist()
-        value = reduce(lambda x, y: x << 1 | y, bitlist[1:])
-        if bitlist[0] == 1:
-            value *= -1
-        return value
 
 
 

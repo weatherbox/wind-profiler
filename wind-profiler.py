@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import struct
 from bitarray import bitarray
-from pprint import pprint
 
 def parse_wind_profiler_bufr(file):
     '''
@@ -41,11 +40,13 @@ def int24(l):
 
 def parse_section4(fileptr, data):
     l = struct.unpack('4B', fileptr.read(4))
-    print int24(l[0:3])
+    bit_len = (int24(l[0:3]) - 4) * 8
     packed_data = fileptr.read()
     bits = Bits(packed_data)
 
-    parse_station(bits)
+    data['stations'] = []
+    while bits.getpos() < bit_len - 16:
+        data['stations'].append(parse_station(bits))
 
 
 def parse_station(bits):
@@ -62,7 +63,6 @@ def parse_station(bits):
     for x in range(station['X']):
         station['obs'].append(parse_observation(bits))
 
-    pprint(station)
     return station
 
 def parse_observation(bits):
@@ -132,6 +132,9 @@ class Bits():
         self.bits = bitarray()
         self.bits.frombytes(byte)
         self.pos = 0
+
+    def getpos(self):
+        return self.pos
 
     def readint(self, length):
         i = self.toint(self.bits[self.pos : self.pos + length])
